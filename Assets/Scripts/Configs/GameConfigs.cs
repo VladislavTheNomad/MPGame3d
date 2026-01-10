@@ -13,11 +13,22 @@ public class GameConfigs : ScriptableObject
     [field: Header("Enemy Balance")]
     [field: SerializeField] public float EnemySpeed { get; private set; } = 2f;
     [field: SerializeField] public float EnemyBraking { get; private set; } = 30f;
-    [field: SerializeField] public int HP { get; private set; } = 100;
+    [field: SerializeField] public int EnemyHP { get; private set; } = 100;
+    [field: SerializeField] public int EnemyDamage { get; private set; } = 5;
+    [field: SerializeField] public float AttackDelay { get; private set; } = 1f;
+    
+    [field: Header("Ball Balance")]
+    [field: SerializeField] public float BallLifeSpan { get; private set; } = 5f;
+    
+    [field: Header("Potion Balance")]
+    [field: SerializeField] public float PotionLifeSpan { get; private set; } = 3f;
+    [field: SerializeField] public float PotionSpawnChance { get; private set; } = 10f;
 
     [field: Header("Player Balance")]
     [field: SerializeField] public float PlayerSpeed { get; private set; } = 8f;
     [field: SerializeField] public float PlayerBraking { get; private set; } = 60f;
+    [field: SerializeField] public int PlayerHP { get; private set; } = 100;
     [field: SerializeField] public float PlayerAttackRadius { get; private set; } = 10f;
     [field: SerializeField] public int PlayerAttackDamage { get; private set; } = 10;
+    [field: SerializeField] public int PotionHPRestore { get; private set; } = 20;
 }

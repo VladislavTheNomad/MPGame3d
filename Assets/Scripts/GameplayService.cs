@@ -26,7 +26,7 @@ public class GameplayService : NetworkBehaviour
 
     public override void Spawned()
     {
-        DelayBetweenEnemySpawn = TickTimer.CreateFromSeconds(Runner, 5f);
+        DelayBetweenEnemySpawn = TickTimer.CreateFromSeconds(Runner, _gameConfigs.SpawnDelay);
     }
 
     private void GameStarted()
@@ -41,7 +41,7 @@ public class GameplayService : NetworkBehaviour
         
         if (DelayBetweenEnemySpawn.Expired(Runner))
         {
-            DelayBetweenEnemySpawn = TickTimer.CreateFromSeconds(Runner,2f);
+            DelayBetweenEnemySpawn = TickTimer.CreateFromSeconds(Runner,_gameConfigs.SpawnDelay);
 
             var hostPlayer = _playersTransforms[0];
             
@@ -69,7 +69,7 @@ public class GameplayService : NetworkBehaviour
                 if (hasPlaceToSpawn)
                 {
                     Runner.Spawn(_prefabEnemy, spawnPosition, Quaternion.identity, PlayerRef.None,
-                        (runner, newObject) => { newObject.GetComponent<EnemyBehaviour>().Init(_playersTransforms, _gameConfigs.EnemySpeed, _gameConfigs.HP); });
+                        (runner, newObject) => { newObject.GetComponent<EnemyBehaviour>().Init(_playersTransforms, _gameConfigs); });
                 }
             }
         }

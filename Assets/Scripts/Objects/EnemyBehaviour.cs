@@ -5,20 +5,35 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkCharacterController))]
 public class EnemyBehaviour : NetworkBehaviour
 {
+    [SerializeField] private NetworkObject _enemyBallPrefab;
+    [SerializeField] private NetworkObject _potionPrefab;
+    
     private List<Transform> _targets;
     private NetworkCharacterController _controller;
     private float _speed;
     private Vector3 _targetPosition;
-    
+    private float _attackDelay;
+    private GameConfigs _gameConfigs;
+    private int _damage;
+
+    [Networked] private TickTimer AttackDelay { get; set; }
     [Networked] private int HP { get; set; }
     
     private void Awake() => _controller = GetComponent<NetworkCharacterController>();
 
-    public void Init(List<Transform> targets, float speed, int hp)
+    public void Init(List<Transform> targets, GameConfigs gameConfigs)
     {
         _targets = targets;
-        _speed =  speed;
-        HP = hp;
+        _gameConfigs = gameConfigs;
+    }
+
+    public override void Spawned()
+    {
+        _speed = _gameConfigs.EnemySpeed;
+        _attackDelay = _gameConfigs.AttackDelay;
+        HP = _gameConfigs.EnemyHP;
+        _damage = _gameConfigs.EnemyDamage;
+        AttackDelay = TickTimer.CreateFromSeconds(Runner, _attackDelay);
     }
 
     public override void FixedUpdateNetwork()
@@ -48,7 +63,22 @@ public class EnemyBehaviour : NetworkBehaviour
             {
                 transform.rotation = Quaternion.LookRotation(directionToPlayer);
             }
+
+            if (AttackDelay.ExpiredOrNotRunning(Runner))
+            {
+                ShootToTarget(_targetPosition, directionToPlayer);
+            }
         }
+    }
+
+    private void ShootToTarget(Vector3 target, Vector3  direction)
+    {
+        AttackDelay = TickTimer.CreateFromSeconds(Runner, _attackDelay);
+        Runner.Spawn(_enemyBallPrefab, transform.position + direction, transform.rotation, Object.InputAuthority,
+            (runner, newObject) =>
+            {
+                newObject.GetComponent<Ball>().Init(_damage, _gameConfigs.BallLifeSpan);
+            });
     }
 
     public void DealDamage(int damage)
@@ -59,7 +89,32 @@ public class EnemyBehaviour : NetworkBehaviour
 
         if (HP <= 0)
         {
+            if (_gameConfigs.PotionLifeSpan > Random.Range(0f, 100f))
+            {
+                SpawnPotion();
+            }
+
             Runner.Despawn(Object);
+        }
+    }
+
+    private void SpawnPotion()
+    {
+        Debug.Log("Attempting to spawn potion...");
+        var potionObj = Runner.Spawn(_potionPrefab, transform.position, Quaternion.identity, Object.InputAuthority,
+            (runner, newObject) =>
+            {
+                Debug.Log("Initializing Potion...");
+                newObject.GetComponent<Potion>().Init(_gameConfigs.PotionLifeSpan);
+            });
+
+        if (potionObj != null)
+        {
+            Debug.Log($"Potion spawned successfully! Name: {potionObj.name}, ID: {potionObj.Id}");
+        }
+        else
+        {
+            Debug.LogError("Runner.Spawn returned NULL! Check Network Project Config -> Prefabs.");
         }
     }
 }

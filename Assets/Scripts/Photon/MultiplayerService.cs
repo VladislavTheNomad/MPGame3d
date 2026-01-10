@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using Fusion;
 using Fusion.Sockets;
-using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,6 +13,7 @@ using Random = UnityEngine.Random;
 public class MultiplayerService : MonoBehaviour, INetworkRunnerCallbacks
 {
     public event Action OnGameStarted;
+    public event Action OnNewPlayerComing;
     
     [SerializeField] private GameObject _menuUI;
     [SerializeField] private TMP_InputField _roomIDInputField;
@@ -22,6 +21,7 @@ public class MultiplayerService : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private Button _hostButton;
     [SerializeField] private Button _joinButton;
     [SerializeField] private TMP_Text _idRoomText;
+    [SerializeField] private TMP_Text _chatText;
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
@@ -32,7 +32,7 @@ public class MultiplayerService : MonoBehaviour, INetworkRunnerCallbacks
     [Inject]
     public void Construct(GameConfigs gameConfigs)
     {
-        _gameConfigs =  gameConfigs;
+        _gameConfigs = gameConfigs;
     }
 
     private void Awake()
@@ -68,9 +68,9 @@ public class MultiplayerService : MonoBehaviour, INetworkRunnerCallbacks
         
         _runner = gameObject.AddComponent<NetworkRunner>();
         _runner.ProvideInput = true;
+        _runner.AddCallbacks(this);
 
         var scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);
-        
         var sceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>();
         
         var result = await _runner.StartGame(new StartGameArgs()
@@ -129,6 +129,18 @@ public class MultiplayerService : MonoBehaviour, INetworkRunnerCallbacks
             _runner.Shutdown();
         }
     }
+    
+    public void UpdateChatUI(string message, PlayerRef source)
+    {
+        if (source == _runner.LocalPlayer)
+        {
+            _chatText.text = "You Said: " + message;
+        }
+        else
+        {
+            _chatText.text = $"Player {source.PlayerId + 2} said: {message}\n";
+        }
+    }
 
     private void OnClickHost()
     {
@@ -153,24 +165,22 @@ public class MultiplayerService : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
-        if (runner.IsServer)
-        {
-            if (_blackList.Contains(player.ToString()))
+        Vector3 spawnPos = new Vector3(player.RawEncoded, 5, 0);
+
+        NetworkObject networkObject = runner.Spawn(_playerPrefab, spawnPos, Quaternion.identity, player,
+            (runner, newPlayer) =>
             {
-                Debug.Log("Banned player tried to join. Disconnecting...");
-                runner.Disconnect(player);
-                return;
-            }
-            
-            Vector3 spawnPos = new Vector3(player.RawEncoded, 5, 0);
-            NetworkObject networkObject = runner.Spawn(_playerPrefab, spawnPos, Quaternion.identity, player,
-                (runner, newPlayer) =>
+                newPlayer.GetComponent<Player>().Init(_gameConfigs, this);
+                _spawnedCharacters[player] = newPlayer;
+                if (runner.IsServer)
                 {
-                    newPlayer.GetComponent<Player>().Init(_gameConfigs.PlayerSpeed, _gameConfigs.PlayerAttackRadius, _gameConfigs.PlayerAttackDamage, this);
-                });
-            _spawnedCharacters.Add(player, networkObject);
-            OnGameStarted?.Invoke();
-        }
+                    OnGameStarted?.Invoke();
+                }
+                else
+                {
+                    OnNewPlayerComing?.Invoke();
+                }
+            });
     }
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
@@ -224,6 +234,4 @@ public class MultiplayerService : MonoBehaviour, INetworkRunnerCallbacks
     public void OnSceneLoadDone(NetworkRunner runner) { }
 
     public void OnSceneLoadStart(NetworkRunner runner) { }
-
-    
 }

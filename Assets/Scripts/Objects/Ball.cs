@@ -7,6 +7,7 @@ public class Ball : NetworkBehaviour
 {
     [Networked] private TickTimer Life { get; set; }
     private int _damage;
+    private float _lifeSpan;
 
     public override void FixedUpdateNetwork()
     {
@@ -20,10 +21,11 @@ public class Ball : NetworkBehaviour
         }
     }
 
-    public void Init(int  damage)
+    public void Init(int  damage, float lifeSpan)
     {
+        _lifeSpan = lifeSpan;
         _damage = damage;
-        Life = TickTimer.CreateFromSeconds(Runner,2f);
+        Life = TickTimer.CreateFromSeconds(Runner, _lifeSpan);
     }
 
     private void OnTriggerEnter(Collider other)
@@ -32,8 +34,19 @@ public class Ball : NetworkBehaviour
 
         if (other.TryGetComponent<EnemyBehaviour>(out var enemy))
         {
-            enemy.DealDamage(_damage);
-            Runner.Despawn(Object);
+            if (enemy != null)
+            {
+                enemy.DealDamage(_damage);
+            }
         }
+        else if (other.TryGetComponent<Player>(out var player))
+        {
+            if (player != null)
+            {
+                player.DealDamage(_damage);
+            }
+        }
+        
+        Runner.Despawn(Object);
     }
 }
