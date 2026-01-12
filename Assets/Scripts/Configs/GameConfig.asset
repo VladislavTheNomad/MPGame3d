@@ -19,14 +19,18 @@ MonoBehaviour:
   <RaycastHeight>k__BackingField: 5
   <EnemySpeed>k__BackingField: 2
   <EnemyBraking>k__BackingField: 30
-  <EnemyHP>k__BackingField: 100
-  <EnemyDamage>k__BackingField: 5
+  <EnemyHP>k__BackingField: 6
+  <EnemyDamage>k__BackingField: 1
   <AttackDelay>k__BackingField: 1
   <BallLifeSpan>k__BackingField: 5
   <PotionLifeSpan>k__BackingField: 3
-  <PlayerSpeed>k__BackingField: 8
+  <PotionSpawnChance>k__BackingField: 20
+  <EXPCrystalLifeSpan>k__BackingField: 5
+  <PlayerSpeed>k__BackingField: 5
   <PlayerBraking>k__BackingField: 60
-  <PlayerHP>k__BackingField: 100
+  <PlayerMaxHP>k__BackingField: 100
   <PlayerAttackRadius>k__BackingField: 10
-  <PlayerAttackDamage>k__BackingField: 20
+  <PlayerAttackDamage>k__BackingField: 2
   <PotionHPRestore>k__BackingField: 20
+  <EXPGetFromCrystal>k__BackingField: 5
+  <PlayerExpToLevelUp>k__BackingField: 10

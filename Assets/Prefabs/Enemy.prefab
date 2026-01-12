@@ -70,6 +70,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _enemyBallPrefab: {fileID: 1203931085356392880, guid: 3f8c21b992cd07445b3212a7b77f8b8d, type: 3}
   _potionPrefab: {fileID: 2745077367005924, guid: 027c315098c86984593c75f0369024d6, type: 3}
+  _expCrystalPrefab: {fileID: 5464565329437519425, guid: 1658f964c6ea57e419fce961a30cfe4e, type: 3}
 --- !u!143 &8097534087978305619
 CharacterController:
   m_ObjectHideFlags: 0

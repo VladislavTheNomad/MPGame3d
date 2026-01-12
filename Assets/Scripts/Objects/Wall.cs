@@ -1,4 +1,3 @@
-using Fusion;
 using UnityEngine;
 
 namespace MPGame3d
@@ -10,17 +9,15 @@ namespace MPGame3d
         Left,
         Right
     }
-    public class Wall : NetworkBehaviour
+    public class Wall : MonoBehaviour
     {
         [SerializeField] private WallType _wallType;
         
         private void OnTriggerEnter(Collider other)
         {
-            if (!Object.HasStateAuthority) return;
             
             if (other.TryGetComponent<Player>(out var player))
             {
-                Debug.Log("!!!");
                 if (player != null)
                 {
                     switch (_wallType)

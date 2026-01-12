@@ -23,12 +23,18 @@ public class GameConfigs : ScriptableObject
     [field: Header("Potion Balance")]
     [field: SerializeField] public float PotionLifeSpan { get; private set; } = 3f;
     [field: SerializeField] public float PotionSpawnChance { get; private set; } = 10f;
+    
+    [field: Header("EXP Crystal Balance")]
+    [field: SerializeField] public float EXPCrystalLifeSpan { get; private set; } = 5f;
+    
 
     [field: Header("Player Balance")]
     [field: SerializeField] public float PlayerSpeed { get; private set; } = 8f;
     [field: SerializeField] public float PlayerBraking { get; private set; } = 60f;
-    [field: SerializeField] public int PlayerHP { get; private set; } = 100;
+    [field: SerializeField] public int PlayerMaxHP { get; private set; } = 100;
     [field: SerializeField] public float PlayerAttackRadius { get; private set; } = 10f;
     [field: SerializeField] public int PlayerAttackDamage { get; private set; } = 10;
     [field: SerializeField] public int PotionHPRestore { get; private set; } = 20;
+    [field: SerializeField] public int EXPGetFromCrystal { get; private set; } = 1;
+    [field: SerializeField] public int PlayerExpToLevelUp { get; private set; } = 10;
 }

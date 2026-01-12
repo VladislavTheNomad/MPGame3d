@@ -1,36 +1,39 @@
 using Fusion;
 using UnityEngine;
 
-public class Potion : NetworkBehaviour
+namespace MPGame3d
 {
-    [Networked] private TickTimer Life { get; set; }
-    private float _lifeSpan;
-
-    private void OnTriggerEnter(Collider other)
+    public class Potion : NetworkBehaviour
     {
-        if (!Object.HasStateAuthority) return;
+        [Networked] private TickTimer Life { get; set; }
+        private float _lifeSpan;
 
-        if (other.TryGetComponent<Player>(out var player))
+        private void OnTriggerEnter(Collider other)
         {
-            if (player != null)
+            if (!Object.HasStateAuthority) return;
+
+            if (other.TryGetComponent<Player>(out var player))
             {
-                player.Heal();
-                Runner.Despawn(Object);
+                if (player != null)
+                {
+                    player.Heal();
+                    Runner.Despawn(Object);
+                }
             }
         }
-    }
 
-    public void Init(float potionLifeSpan)
-    {
-        _lifeSpan =  potionLifeSpan;
-        Life = TickTimer.CreateFromSeconds(Runner, _lifeSpan);
-    }
-    
-    public override void FixedUpdateNetwork()
-    {
-        if (Life.IsRunning && Life.Expired(Runner))
+        public void Init(float potionLifeSpan)
         {
-            Runner.Despawn(Object);
+            _lifeSpan =  potionLifeSpan;
+            Life = TickTimer.CreateFromSeconds(Runner, _lifeSpan);
+        }
+    
+        public override void FixedUpdateNetwork()
+        {
+            if (Life.IsRunning && Life.Expired(Runner))
+            {
+                Runner.Despawn(Object);
+            }
         }
     }
 }

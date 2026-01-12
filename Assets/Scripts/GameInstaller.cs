@@ -1,16 +1,22 @@
-using Cinemachine;
 using UnityEngine;
 using Zenject;
 
-public class GameInstaller : MonoInstaller
+namespace MPGame3d
 {
-    [SerializeField] private MultiplayerService _multiplayerService;
-    [SerializeField] private GameConfigs _gameConfigs;
-
-    public override void InstallBindings()
+    public class GameInstaller : MonoInstaller
     {
-        Container.Bind<GameConfigs>().FromInstance(_gameConfigs).AsSingle().NonLazy();
-        Container.BindInterfacesAndSelfTo<MultiplayerService>().FromInstance(_multiplayerService).AsSingle();
-        Container.BindInterfacesAndSelfTo<GameplayService>().AsSingle();
+        [SerializeField] private MultiplayerService _multiplayerService;
+        [SerializeField] private GameConfigs _gameConfigs;
+        [SerializeField] private UIService _uiService;
+        
+        public override void InstallBindings()
+        {
+            Container.Bind<UIService>().FromInstance(_uiService).AsSingle();
+            Container.Bind<GameConfigs>().FromInstance(_gameConfigs).AsSingle().NonLazy();
+            Container.BindInterfacesAndSelfTo<MultiplayerService>().FromInstance(_multiplayerService).AsSingle();
+            Container.BindInterfacesAndSelfTo<GameplayService>().AsSingle();
+            
+            ZenjectAccessor.SetContainer(Container);
+        }
     }
 }

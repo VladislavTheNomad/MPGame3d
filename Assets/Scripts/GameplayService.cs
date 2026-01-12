@@ -3,73 +3,76 @@ using Fusion;
 using UnityEngine;
 using Zenject;
 
-public class GameplayService : NetworkBehaviour
+namespace MPGame3d
 {
-    [SerializeField] private EnemyBehaviour _prefabEnemy;
-    [SerializeField] private LayerMask floorLayerMask;
-    [Networked] private TickTimer DelayBetweenEnemySpawn { get; set; }
-    private bool _gameStarted;
-    private MultiplayerService _multiplayerService;
-    private GameConfigs _gameConfigs;
-    private List<Transform> _playersTransforms;
-
-    [Inject]
-    public void Construct(MultiplayerService multiplayerService, GameConfigs gameConfigs)
+    public class GameplayService : NetworkBehaviour
     {
-        _multiplayerService =  multiplayerService;
-        _gameConfigs  = gameConfigs;
-    }
+        [SerializeField] private EnemyBehaviour _prefabEnemy;
+        [SerializeField] private LayerMask floorLayerMask;
+        [Networked] private TickTimer DelayBetweenEnemySpawn { get; set; }
+        private bool _gameStarted;
+        private MultiplayerService _multiplayerService;
+        private GameConfigs _gameConfigs;
+        private List<Transform> _playersTransforms;
 
-    public void Awake() => _multiplayerService.OnGameStarted += GameStarted;
-    
-    public void OnDestroy() => _multiplayerService.OnGameStarted -= GameStarted;
-
-    public override void Spawned()
-    {
-        DelayBetweenEnemySpawn = TickTimer.CreateFromSeconds(Runner, _gameConfigs.SpawnDelay);
-    }
-
-    private void GameStarted()
-    {
-        _gameStarted = true;
-        _playersTransforms = _multiplayerService.GetPlayersTransforms();
-    }
-
-    public override void FixedUpdateNetwork()
-    {
-        if (!Object.HasStateAuthority || !_gameStarted) return;
-        
-        if (DelayBetweenEnemySpawn.Expired(Runner))
+        [Inject]
+        public void Construct(MultiplayerService multiplayerService, GameConfigs gameConfigs)
         {
-            DelayBetweenEnemySpawn = TickTimer.CreateFromSeconds(Runner,_gameConfigs.SpawnDelay);
+            _multiplayerService =  multiplayerService;
+            _gameConfigs  = gameConfigs;
+        }
 
-            var hostPlayer = _playersTransforms[0];
-            
-            if (hostPlayer != null)
+        public void Awake() => _multiplayerService.OnGameStarted += GameStarted;
+    
+        public void OnDestroy() => _multiplayerService.OnGameStarted -= GameStarted;
+
+        public override void Spawned()
+        {
+            DelayBetweenEnemySpawn = TickTimer.CreateFromSeconds(Runner, _gameConfigs.SpawnDelay);
+        }
+
+        private void GameStarted()
+        {
+            _gameStarted = true;
+            _playersTransforms = _multiplayerService.GetPlayersTransforms();
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            if (!Object.HasStateAuthority || !_gameStarted) return;
+        
+            if (DelayBetweenEnemySpawn.Expired(Runner))
             {
-                bool hasPlaceToSpawn = false;
-                Vector3 spawnPosition = Vector3.zero;
+                DelayBetweenEnemySpawn = TickTimer.CreateFromSeconds(Runner,_gameConfigs.SpawnDelay);
 
-                for (int i = 0; i < _gameConfigs.MaxSpawnAttempts; i++)
+                var hostPlayer = _playersTransforms[0];
+            
+                if (hostPlayer != null)
                 {
-                    float angle = Random.Range(0f, Mathf.PI * 2);
-                    float distance = Random.Range(_gameConfigs.MinSpawnDistance, _gameConfigs.MaxSpawnDistance);
-                    Vector3 spawnOffset = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * distance;
-                    Vector3 targetPoint = _playersTransforms[Random.Range(0, _playersTransforms.Count)].position + spawnOffset;
-                    Vector3 rayPoint = targetPoint + Vector3.up * _gameConfigs.RaycastHeight;
+                    bool hasPlaceToSpawn = false;
+                    Vector3 spawnPosition = Vector3.zero;
 
-                    if (Physics.Raycast(rayPoint, Vector3.down, out RaycastHit hit, _gameConfigs.RaycastHeight+1f, floorLayerMask.value))
+                    for (int i = 0; i < _gameConfigs.MaxSpawnAttempts; i++)
                     {
-                        spawnPosition = hit.point + Vector3.up;
-                        hasPlaceToSpawn = true;
-                        break;
-                    }
-                }
+                        float angle = Random.Range(0f, Mathf.PI * 2);
+                        float distance = Random.Range(_gameConfigs.MinSpawnDistance, _gameConfigs.MaxSpawnDistance);
+                        Vector3 spawnOffset = new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle)) * distance;
+                        Vector3 targetPoint = _playersTransforms[Random.Range(0, _playersTransforms.Count)].position + spawnOffset;
+                        Vector3 rayPoint = targetPoint + Vector3.up * _gameConfigs.RaycastHeight;
 
-                if (hasPlaceToSpawn)
-                {
-                    Runner.Spawn(_prefabEnemy, spawnPosition, Quaternion.identity, PlayerRef.None,
-                        (runner, newObject) => { newObject.GetComponent<EnemyBehaviour>().Init(_playersTransforms, _gameConfigs); });
+                        if (Physics.Raycast(rayPoint, Vector3.down, out RaycastHit hit, _gameConfigs.RaycastHeight+1f, floorLayerMask.value))
+                        {
+                            spawnPosition = hit.point + Vector3.up;
+                            hasPlaceToSpawn = true;
+                            break;
+                        }
+                    }
+
+                    if (hasPlaceToSpawn)
+                    {
+                        Runner.Spawn(_prefabEnemy, spawnPosition, Quaternion.identity, PlayerRef.None,
+                            (runner, newObject) => { newObject.GetComponent<EnemyBehaviour>().Init(_playersTransforms); });
+                    }
                 }
             }
         }
