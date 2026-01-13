@@ -17,9 +17,9 @@ MonoBehaviour:
   <MaxSpawnDistance>k__BackingField: 50
   <MaxSpawnAttempts>k__BackingField: 10
   <RaycastHeight>k__BackingField: 5
-  <EnemySpeed>k__BackingField: 2
+  <EnemySpeed>k__BackingField: 5
   <EnemyBraking>k__BackingField: 30
-  <EnemyHP>k__BackingField: 6
+  <EnemyHP>k__BackingField: 8
   <EnemyDamage>k__BackingField: 1
   <AttackDelay>k__BackingField: 1
   <BallLifeSpan>k__BackingField: 5

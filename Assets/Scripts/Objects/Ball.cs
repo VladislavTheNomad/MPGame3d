@@ -37,6 +37,7 @@ namespace MPGame3d
                 if (enemy != null)
                 {
                     enemy.DealDamage(_damage);
+                    Runner.Despawn(Object);
                 }
             }
             else if (other.TryGetComponent<Player>(out var player))
@@ -44,10 +45,9 @@ namespace MPGame3d
                 if (player != null)
                 {
                     player.DealDamage(_damage);
+                    Runner.Despawn(Object);
                 }
             }
-        
-            Runner.Despawn(Object);
         }
     }
 }

@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Zenject;
+using Object = System.Object;
 using Random = UnityEngine.Random;
 
 namespace MPGame3d
@@ -66,13 +67,14 @@ namespace MPGame3d
 
             var scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);
             var sceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>();
-        
+
             var result = await _runner.StartGame(new StartGameArgs()
             {
                 GameMode = mode,
                 SessionName = _roomIDInputField.text,
                 Scene = scene,
-                SceneManager = sceneManager
+                SceneManager = sceneManager,
+                ConnectionToken = GetConnectionToken(),
             });
 
             if (result.Ok)
@@ -86,6 +88,19 @@ namespace MPGame3d
                 Debug.LogError($"Error: {result.ShutdownReason}");
                 RestartScene();
             }
+        }
+        
+        private byte[] GetConnectionToken()
+        {
+            string tokenKey = "MyToken";
+            string saved = PlayerPrefs.GetString(tokenKey, string.Empty);
+            if (string.IsNullOrEmpty(saved))
+            {
+                byte[] newToken = Guid.NewGuid().ToByteArray();
+                PlayerPrefs.SetString(tokenKey, Convert.ToBase64String(newToken));
+                return newToken;
+            }
+            return Convert.FromBase64String(saved);
         }
     
         private void GenerateRandomID()
@@ -103,8 +118,11 @@ namespace MPGame3d
         public void ProposeBan(PlayerRef player)
         {
             if (!_runner.IsServer) return;
-        
-            _blackList.Add(player.ToString());
+
+
+            byte[] token = _runner.GetPlayerConnectionToken(player);
+            string tokenString = new Guid(token).ToString();
+            _blackList.Add(tokenString);
 
             if (player == _runner.LocalPlayer)
             {
@@ -139,6 +157,14 @@ namespace MPGame3d
 
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
         {
+            if (!runner.IsServer) return;
+            
+            if (_blackList.Contains(player.ToString()))
+            {
+                runner.Disconnect(player);
+                return;
+            }
+            
             Vector3 spawnPos = new Vector3(player.RawEncoded*3, 5, 0);
 
             runner.Spawn(_playerPrefab, spawnPos, Quaternion.identity, player, (runner, newObject) =>
@@ -163,13 +189,31 @@ namespace MPGame3d
         }
 
         public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
+        { 
+            RestartScene();
+        }
+
+        public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason)
         {
             RestartScene();
         }
 
-        public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason) { }
+        public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request,
+            byte[] token)
+        {
+            if (token == null || token.Length == 0)
+            {
+                request.Refuse();
+                return;
+            }
 
-        public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) { }
+            string clientGuid = new Guid(token).ToString();
+
+            if (_blackList.Contains(clientGuid))
+            {
+                request.Refuse();
+            }
+        }
 
         public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }
 

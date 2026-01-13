@@ -36,6 +36,7 @@ namespace MPGame3d
         [Inject] private GameConfigs _gameConfigs;
         [Inject] private MultiplayerService _multiplayerService;
 
+        private Camera _camera;
         private NetworkCharacterController _controller;
         private ChangeDetector _changeDetector;
         private Slider _hpBarInGame;
@@ -49,6 +50,7 @@ namespace MPGame3d
             _controller = GetComponent<NetworkCharacterController>();
             _material = GetComponentInChildren<MeshRenderer>().material;
             _levelUpBonuses = (LevelUps[])Enum.GetValues(typeof(LevelUps));
+            _camera = Camera.main;
         }
 
         public override void Spawned()
@@ -126,11 +128,49 @@ namespace MPGame3d
             {
                 Vector3 moveDirection = Vector3.ClampMagnitude(data.direction, 1f);
                 _controller.Move(Speed * moveDirection * Runner.DeltaTime);
+                
+                if (Object.HasStateAuthority)
+                {
+                    CheckScreenBounds();
+                }
 
                 if (HasStateAuthority && Delay.ExpiredOrNotRunning(Runner))
                 {
                     SpawnBullet();
                 }
+            }
+        }
+
+        private void CheckScreenBounds()
+        {
+            if (!Object.HasStateAuthority) return;
+            
+            Vector3 viewportPosition =  _camera.WorldToViewportPoint(transform.position);
+            Vector3 offset = Vector3.zero;
+            
+            if (viewportPosition.x > 1)
+            {
+                offset += new Vector3(-0.3f, 0, 0);
+            }
+            
+            if (viewportPosition.x < 0)
+            {
+                offset += new Vector3(0.3f, 0, 0);
+            }
+            
+            if (viewportPosition.y > 1)
+            {
+                offset += new Vector3(0, 0, -0.3f);
+            }
+            
+            if (viewportPosition.y < 0)
+            {
+                offset += new Vector3(0, 0, 0.3f);
+            }
+
+            if (offset != Vector3.zero)
+            {
+                Teleport(offset);
             }
         }
 
@@ -162,7 +202,6 @@ namespace MPGame3d
             if (CurrentHP <= 0)
             {
                 _multiplayerService.ProposeBan(Object.InputAuthority);
-                Runner.Despawn(Object);
             }
         }
 
@@ -172,7 +211,7 @@ namespace MPGame3d
             CurrentHP = Mathf.Min(CurrentHP + HPRestoreFromPotion, MaxHP);
         }
 
-        public void Teleport(Vector3 offset)
+        private void Teleport(Vector3 offset)
         {
             if (!Object.HasStateAuthority) return;
             _controller.Teleport(transform.position + offset);
